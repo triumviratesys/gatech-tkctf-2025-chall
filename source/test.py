@@ -5,10 +5,15 @@ import sys
 from pwn import *
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
-context.arch = "x86_64"
-context.log_level = 'error'
-
 bin_path = os.path.join(ROOT, "../docker/target")
+
+# Detect binary architecture
+elf = ELF(bin_path, checksec=False)
+if elf.bits == 32:
+    context.arch = "i386"
+else:
+    context.arch = "x86_64"
+context.log_level = 'error'
 
 def test_basic_functionality():
     """Test basic operations without exploitation"""
