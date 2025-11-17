@@ -144,17 +144,39 @@ void inscribe_data(void) {
 
     Zone* z = (Zone*)zones[n];
 
-    printf("Data (max 128 bytes): ");
-    char input[256];
-    read_data(input, sizeof(input));
-    size_t len = strlen(input);
+    // Read length first to support binary data
+    printf("Data length: ");
+    int len = read_int();
+
+    if (len < 0) {
+        puts("[Invalid length]");
+        return;
+    }
+
+    // Determine max length based on corruption status
+    // Need enough space to overflow and reach subsequent chunks
+    int max_len = (corrupted == n) ? 0x400 : 0x80;
+    if (len > max_len) {
+        printf("[Length too large, max is 0x%x]\n", max_len);
+        return;
+    }
+
+    printf("Data (max %d bytes): ", max_len);
+
+    // Read binary data directly without strlen
+    char input[0x200];
+    size_t bytes_read = fread(input, 1, len, stdin);
+
+    if (bytes_read != (size_t)len) {
+        puts("[Failed to read data]");
+        return;
+    }
 
     if (corrupted == n) {
         puts("[Overflow enabled - writing with extra bytes]");
-        memcpy(z->data, input, len > 0x88 ? 0x88 : len);
-    } else {
-        memcpy(z->data, input, len > 0x80 ? 0x80 : len);
     }
+
+    memcpy(z->data, input, len);
 
     printf("[Data inscribed to Zone %d]\n", n);
 }
