@@ -2,14 +2,29 @@
 
 import os
 import sys
+import subprocess
 from pwn import *
 
 ROOT = os.path.abspath(os.path.dirname(__file__))
 bin_path = os.path.join(ROOT, "../docker/target")
 
-# Detect binary architecture
-elf = ELF(bin_path, checksec=False)
-if elf.bits == 32:
+# Detect binary architecture using readelf for reliability
+def detect_arch(binary_path):
+    try:
+        result = subprocess.run(['readelf', '-h', binary_path],
+                              capture_output=True, text=True, check=True)
+        if 'ELF32' in result.stdout:
+            return 32
+        elif 'ELF64' in result.stdout:
+            return 64
+    except:
+        # Fallback to pwntools detection
+        elf = ELF(binary_path, checksec=False)
+        return elf.bits
+    return 64  # Default to 64-bit if detection fails
+
+arch_bits = detect_arch(bin_path)
+if arch_bits == 32:
     context.arch = "i386"
 else:
     context.arch = "x86_64"
