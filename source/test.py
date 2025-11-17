@@ -21,7 +21,8 @@ def test_basic_functionality():
         p = process(bin_path)
 
     try:
-        p.recvuntil(b'═')
+        # Wait for banner (═ is UTF-8 encoded as \xe2\x95\x90)
+        p.recvuntil(b'\xe2\x95\x90')
 
         p.sendlineafter(b'> ', b'1')
         p.sendlineafter(b'(0-9): ', b'0')
