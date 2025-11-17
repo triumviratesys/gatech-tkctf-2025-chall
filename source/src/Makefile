@@ -3,36 +3,28 @@ CFLAGS ?= -std=gnu99 -O0 -g
 LDFLAGS ?=
 LIBS ?=
 
-# 32b or 64b
-CFLAGS += -m32
-# CFLAGS += -m64
+# 64-bit architecture (required for glibc 2.27 heap exploitation)
+CFLAGS += -m64
 
-# supress warning
-CFLAGS += -Wno-format-security
+# Disable stack protector (focus on heap exploitation)
+CFLAGS += -fno-stack-protector
 
-# enable executable stack
-# CFLAGS += -z execstack
+# Enable PIE (Position Independent Executable)
+CFLAGS += -pie -fPIE
 
-# enable SSP
-CFLAGS += -fstack-protector
+# Enable Full RELRO (Read-Only Relocations)
+LDFLAGS += -Wl,-z,relro,-z,now
 
-# disable SSP
-# CFLAGS += -fno-stack-protector
-
-# enable ASLR
-# CFLAGS += -pie -fPIE
-
-# disable ASLR
-CFLAGS += -no-pie
+# NX is enabled by default (non-executable stack)
 
 ALL := target
 
 .PHONY: all
 all: $(ALL)
 
-target: fmtstr.c
-	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) $(LIBS)
-	checksec --file $@
+target: decimal_labyrinth_v2.c flag.h
+	$(CC) $(CFLAGS) -o $@ decimal_labyrinth_v2.c $(LDFLAGS) $(LIBS)
+	checksec --file $@ || true
 
 .PHONY: clean
 clean:

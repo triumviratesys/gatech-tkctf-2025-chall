@@ -1,0 +1,114 @@
+═══════════════════════════════════════════════════════════════════════
+                    DECIMAL LABYRINTH - NUMOGRAM
+═══════════════════════════════════════════════════════════════════════
+
+                         WARP (UPPER TIME-SYSTEM)
+                       ┌──────────────────────┐
+                       │   Zone 0 ↔ Zone 9   │
+                       │  (Lemurian ↔ Oddubb) │
+                       │    Syzygy 0          │
+                       └──────────┬───────────┘
+                                  │
+              ┌───────────────────┴───────────────────┐
+              │                                       │
+              │      TIME-CIRCUIT (CENTRAL)           │
+              │      Six Zones in Rotation            │
+              │                                       │
+      ┌───────┴────────┐                   ┌─────────┴────────┐
+      │  Zone 1 ↔ 8    │                   │   Zone 2 ↔ 7     │
+      │ (Katak ↔ Ixix) │                   │(Sukugool↔Djunana)│
+      │   Syzygy 1     │                   │    Syzygy 2      │
+      └────────────────┘                   └──────────────────┘
+
+              │                                       │
+              └───────────────────┬───────────────────┘
+                                  │
+                         ┌────────┴────────┐
+                         │  Zone 4 ↔ 5     │
+                         │(Kattaku↔Sukuport)│
+                         │   Syzygy 3       │
+                         └────────┬─────────┘
+                                  │
+                                  │
+                       ┌──────────┴───────────┐
+                       │   Zone 3 ↔ Zone 6   │
+                       │   (Djinn ↔ Dubbe)   │
+                       │     Syzygy 4        │
+                       │   PLEX (LOWER)      │
+                       └─────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+ZONE TOPOLOGY
+═══════════════════════════════════════════════════════════════════════
+
+Zone 0: Lemurian  (Warp)         - Barrier, prevents void consolidation
+Zone 1: Katak     (Time-Circuit) - Circuit position 0
+Zone 2: Sukugool  (Time-Circuit) - Circuit position 1
+Zone 3: Djinn     (Plex)         - Lower cryptic zone, retrocausal anchor
+Zone 4: Kattaku   (Time-Circuit) - Circuit position 2
+Zone 5: Sukuport  (Time-Circuit) - Circuit position 3
+Zone 6: Dubbe     (Plex)         - Lower cryptic zone, liberation target
+Zone 7: Djunana   (Time-Circuit) - Circuit position 4
+Zone 8: Ixix      (Time-Circuit) - Circuit position 5
+Zone 9: Oddubb    (Warp)         - Timeline Executor, final target
+
+═══════════════════════════════════════════════════════════════════════
+SYZYGIES (Nine-Sum Twinning)
+═══════════════════════════════════════════════════════════════════════
+
+Each zone is paired with its complement (sum = 9):
+
+  0 + 9 = 9  →  Syzygy 0 (Warp)
+  1 + 8 = 9  →  Syzygy 1 (Time-Circuit)
+  2 + 7 = 9  →  Syzygy 2 (Time-Circuit)
+  3 + 6 = 9  →  Syzygy 4 (Plex)
+  4 + 5 = 9  →  Syzygy 3 (Time-Circuit)
+
+═══════════════════════════════════════════════════════════════════════
+MEMORY LAYOUT (Heap Allocation Order)
+═══════════════════════════════════════════════════════════════════════
+
+[Top Chunk]
+     │
+     ├─ Zone 0: 0x100 bytes ─ WARP BARRIER
+     │
+     ├─ Zone 1: 0x180 bytes ─ TIME-CIRCUIT
+     │
+     ├─ Zone 2: 0x100 bytes ─ TIME-CIRCUIT
+     │
+     ├─ Zone 3: 0x180 bytes ─ PLEX (Fake chunk location)
+     │
+     ├─ Zone 4: 0x100 bytes ─ TIME-CIRCUIT
+     │
+     ├─ Zone 5: 0x100 bytes ─ TIME-CIRCUIT
+     │
+     ├─ Zone 6: 0x100 bytes ─ PLEX (Corruption target)
+     │
+     ├─ Zone 7: 0x100 bytes ─ TIME-CIRCUIT
+     │
+     ├─ Zone 8: 0x100 bytes ─ TIME-CIRCUIT
+     │
+     └─ Zone 9: 0x120 bytes ─ WARP (Timeline Executor)
+
+═══════════════════════════════════════════════════════════════════════
+EXPLOITATION CONCEPTS
+═══════════════════════════════════════════════════════════════════════
+
+RETROCAUSALITY:
+  The prev_size field in heap chunks points backward in time. By corrupting
+  this field, you create false temporal linkages. When a chunk is freed,
+  backward consolidation treats corrupted metadata as truth.
+
+THE PLEX PIVOT:
+  Zones 3 and 6 (Plex) form the cryptic exploitation vector. Zone 3 contains
+  the crafted fake chunk. Zone 6's liberation triggers retrocausal collapse.
+
+TEMPORAL OVERFLOW:
+  Corruption enables overflow from one zone into adjacent zone metadata,
+  allowing manipulation of chunk boundaries across time.
+
+TIMELINE COLLAPSE:
+  The ultimate goal: overlap Zone 9's Timeline Executor through consolidation,
+  hijack its function pointer, and achieve retrocausal breach.
+
+═══════════════════════════════════════════════════════════════════════
