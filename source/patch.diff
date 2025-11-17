@@ -1,13 +1,19 @@
-diff --git a/source/src/fmtstr.c b/source/src/fmtstr.c
-index cce26f5..458cb18 100644
---- a/source/src/fmtstr.c
-+++ b/source/src/fmtstr.c
-@@ -11,7 +11,7 @@ unsigned int secret = 0xdeadbeef;
- void handle_failure(char *buf) {
-   char msg[100];
-   snprintf(msg, sizeof(msg), "Invalid Password! %s\n", buf);
--  printf(msg);
-+  printf("%s", msg);
+diff --git a/source/src/decimal_labyrinth_v2.c b/source/src/decimal_labyrinth_v2.c
+index 1234567..abcdefg 100644
+--- a/source/src/decimal_labyrinth_v2.c
++++ b/source/src/decimal_labyrinth_v2.c
+@@ -119,10 +119,7 @@ void inscribe_data(void) {
+     read_data(input, sizeof(input));
+     size_t len = strlen(input);
+
+-    if (corrupted == n) {
+-        puts("[Overflow enabled - writing with extra bytes]");
+-        memcpy(z->data, input, len > 0x88 ? 0x88 : len);
+-    } else {
+-        memcpy(z->data, input, len > 0x80 ? 0x80 : len);
+-    }
++    // Fix: Always enforce proper bounds checking
++    memcpy(z->data, input, len > 0x80 ? 0x80 : len);
+
+     printf("[Data inscribed to Zone %d]\n", n);
  }
- 
- int main(int argc, char *argv[])

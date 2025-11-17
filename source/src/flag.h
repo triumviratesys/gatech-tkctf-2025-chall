@@ -1,18 +1,24 @@
-#pragma once
+#ifndef FLAG_H
+#define FLAG_H
 
-void print_key(char *input)
-{
-  char buf[1024];
+#include <stdio.h>
+#include <err.h>
+
+// For compile-time embedding during build
+#ifndef FLAG
+static char FLAG_BUF[1024];
+
+static void load_flag(void) {
   FILE *fp = fopen("flag", "r");
   if (!fp)
     err(1, "Failed to locate the flag file!");
 
-  while (1) {
-    size_t len = fread(buf, 1, sizeof(buf)-1, fp);
-    buf[len] = '\0';
-    printf("%s", buf);
-    if (len < sizeof(buf)-1)
-      break;
-  }
+  size_t len = fread(FLAG_BUF, 1, sizeof(FLAG_BUF)-1, fp);
+  FLAG_BUF[len] = '\0';
   fclose(fp);
 }
+
+#define FLAG (FLAG_BUF[0] ? FLAG_BUF : (load_flag(), FLAG_BUF))
+#endif
+
+#endif /* FLAG_H */

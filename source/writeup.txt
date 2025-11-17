@@ -1,10 +1,142 @@
-* Bug: a fmtstr vulnerability
+RETROCAUSALITY - DECIMAL LABYRINTH WRITEUP
 
-  char msg[100];
-  snprintf(msg, sizeof(msg), "Invalid Password! %s\n", buf);
-  printf(msg);
+Challenge: House of Einherjar heap exploitation
+Target: glibc 2.27, x86-64 with PIE, Full RELRO, NX, ASLR
 
-* Exploit
+═══════════════════════════════════════════════════════════════════════
+VULNERABILITY
+═══════════════════════════════════════════════════════════════════════
 
-  1) overwrite 'secret' with any value
-  2) overwrite the GOT of puts() to print_key()
+Bug: Heap buffer overflow in inscribe_data() function
+
+The vulnerability occurs when a zone is marked as "corrupted":
+
+    if (corrupted == n) {
+        puts("[Overflow enabled - writing with extra bytes]");
+        memcpy(z->data, input, len > 0x88 ? 0x88 : len);  // 8 bytes overflow
+    } else {
+        memcpy(z->data, input, len > 0x80 ? 0x80 : len);  // Normal
+    }
+
+When corrupted, the function allows writing 0x88 bytes instead of 0x80,
+creating an 8-byte overflow that can corrupt the next heap chunk's metadata.
+
+═══════════════════════════════════════════════════════════════════════
+EXPLOITATION TECHNIQUE
+═══════════════════════════════════════════════════════════════════════
+
+Attack: House of Einherjar
+
+This technique exploits backward consolidation in glibc's malloc implementation.
+When free() is called on a chunk, it checks the previous chunk's metadata to
+potentially consolidate adjacent free chunks. By corrupting this metadata, we
+can cause consolidation with a fake chunk we control.
+
+Key Steps:
+
+1. Craft a fake chunk in Zone 3's data area
+2. Use the overflow to corrupt Zone 4/5/6's prev_size field
+3. Free Zone 6, triggering backward consolidation
+4. The allocator consolidates our fake chunk with Zone 6
+5. This creates a large free chunk overlapping with later zones
+6. Reallocate to overlap with Zone 9's Timeline Executor
+7. Overwrite the function pointer to win()
+
+═══════════════════════════════════════════════════════════════════════
+DETAILED EXPLOIT STEPS
+═══════════════════════════════════════════════════════════════════════
+
+Step 1: Manifest all zones (0-9) in order
+  - This creates a predictable heap layout
+  - Zones are allocated contiguously
+
+Step 2: Leak heap addresses
+  - Use "View Zone" to leak zone addresses
+  - Calculate relative positions of all zones
+
+Step 3: Leak PIE base
+  - View Zone 9 to see the execute function pointer
+  - It initially points to safe_exit()
+  - Calculate binary base from this address
+
+Step 4: Craft fake chunk in Zone 3
+  - Zone 3 has size 0x180 (large enough for fake chunk)
+  - Create fake chunk header in Zone 3's data:
+    - prev_size: 0 (unused)
+    - size: appropriate value with PREV_INUSE bit set
+  - Position fake chunk to align with consolidation
+
+Step 5: Enable corruption on Zone 3
+  - Use "Corrupt Zone" operation
+  - This allows 8-byte overflow on next write
+
+Step 6: Overflow to corrupt adjacent zone
+  - Write 0x80 bytes + 8 overflow bytes
+  - The 8 overflow bytes overwrite next chunk's prev_size
+  - Set prev_size to point back to our fake chunk
+  - Null byte in size field clears PREV_INUSE bit
+
+Step 7: Liberate Zone 6
+  - Call "Liberate Zone" on Zone 6
+  - This triggers free(zone_6)
+  - malloc checks Zone 6's PREV_INUSE bit (now cleared)
+  - malloc reads prev_size to find "previous" chunk (our fake)
+  - Backward consolidation merges fake chunk + Zone 6
+  - Result: large free chunk overlapping zones 7, 8, 9
+
+Step 8: Overwrite Zone 9's function pointer
+  - Write to a zone that now overlaps with Zone 9
+  - Overwrite Timeline_Executor's execute field
+  - Set it to address of win() function
+
+Step 9: Execute Timeline
+  - Call "Execute Timeline" operation
+  - This calls exec->execute()
+  - Jumps to win() instead of safe_exit()
+  - Flag printed!
+
+═══════════════════════════════════════════════════════════════════════
+MEMORY LAYOUT AFTER CONSOLIDATION
+═══════════════════════════════════════════════════════════════════════
+
+Before liberation:
+  [Zone 3: 0x180] [Zone 4: 0x100] [Zone 5: 0x100] [Zone 6: 0x100] [Zone 7...
+
+After crafting fake chunk in Zone 3:
+  [Zone 3 header + data + FAKE_CHUNK] [Zone 4...
+
+After corrupting Zone 6's prev_size:
+  [...Zone 5] [Zone 6: prev_size points to fake chunk, PREV_INUSE cleared]
+
+After liberating Zone 6:
+  [...] [LARGE FREE CHUNK spanning fake→Zone6→Zone7→Zone8→Zone9] [...]
+
+After reallocating/overwriting:
+  [...] [Overlapping memory with Zone 9's Timeline_Executor corrupted]
+
+═══════════════════════════════════════════════════════════════════════
+PROTECTIONS BYPASSED
+═══════════════════════════════════════════════════════════════════════
+
+PIE: Bypassed via heap address leak and function pointer leak
+ASLR: Bypassed via information leaks from View operation
+Full RELRO: GOT is read-only, but we target heap function pointer
+NX: No shellcode needed, return-to-win technique
+
+═══════════════════════════════════════════════════════════════════════
+PATCH
+═══════════════════════════════════════════════════════════════════════
+
+The vulnerability is fixed by removing the conditional overflow:
+
+    // Always enforce proper bounds checking
+    memcpy(z->data, input, len > 0x80 ? 0x80 : len);
+
+This ensures that writes never exceed the allocated buffer size, preventing
+corruption of adjacent chunk metadata.
+
+═══════════════════════════════════════════════════════════════════════
+FLAG
+═══════════════════════════════════════════════════════════════════════
+
+tkctf{th3_futur3_r3wr1t3s_1ts_0wn_g3n3s1s_09_plex_warp_circuit}

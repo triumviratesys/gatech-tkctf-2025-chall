@@ -1,14 +1,24 @@
-from ubuntu:22.04
+FROM ubuntu:18.04
 
 RUN adduser --disabled-password --gecos '' ctf
 
-# enable 32-bit support + pwntool
-RUN dpkg --add-architecture i386
-RUN apt update
-RUN apt install -y libc6:i386 libstdc++6:i386 \
-    build-essential gcc-multilib g++-multilib \
-    python3 python3-pip python3-dev git libssl-dev libffi-dev
+# Update package lists and install build tools
+RUN apt update && apt install -y \
+    build-essential \
+    gcc \
+    make \
+    python3 \
+    python3-pip \
+    python3-dev \
+    git \
+    libssl-dev \
+    libffi-dev \
+    wget
 
+# Install pwntools for exploit development
 RUN python3 -m pip install --upgrade pip
 RUN python3 -m pip install --upgrade pwntools
+
+# Install checksec for verification
+RUN apt install -y binutils
 
