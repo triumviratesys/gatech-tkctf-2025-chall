@@ -196,7 +196,7 @@ void view_zone(void) {
     if (n == 9) {
         Executor* e = (Executor*)zones[n];
         printf("[Execute ptr: %p]\n", (void*)e->execute);
-        printf("[ID: 0x%lx]\n", e->id);
+        printf("[ID: 0x%llx]\n", e->id);
         printf("[Data: %s]\n", e->data);
     } else {
         Zone* z = (Zone*)zones[n];
